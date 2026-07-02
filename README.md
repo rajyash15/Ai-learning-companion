@@ -4,12 +4,6 @@ An AI-powered active recall and persistent weakness-tracking engine designed spe
 
 ---
 
-## 📺 Project Demo
-*   **Demo Video Link:** [PASTE YOUR GOOGLE DRIVE DEMO VIDEO LINK HERE]
-*   **Lemma Backend Pod:** Shared directly with `ayush@gappy.ai` for evaluation.
-
----
-
 ## 💡 The Problem & The Niche
 Every year, millions of students compete for medical seats in NEET. Biology alone accounts for a staggering **50% of the total exam weightage (360 marks)**, demanding flawless active recall of hyper-specific textbook facts. 
 
