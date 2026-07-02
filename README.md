@@ -28,6 +28,7 @@ Our prototype introduces a seamless, multi-page micro-learning feedback loop:
 
 ## 🛠️ Technical Architecture & Tech Stack
 *   **Frontend Interface:** Written in Python using **Streamlit** to deliver a highly reactive, dark-mode medical dashboard user experience.
+*   **Coding Agent:** Open Code
 *   **Document Processing:** Engineered using **PyPDF2** for client-side text extraction.
 *   **AI Orchestration Engine (Lemma SDK):**
     *   **Lemma Agents API:** Powers three highly specialized backend personas (`neet-question-generator`, `flashcard-generator`, and `revision-planner`) strictly constrained via system prompting to output structured, production-ready JSON arrays. Includes custom regex exception handling to auto-heal pipeline timeouts.
