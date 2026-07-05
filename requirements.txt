@@ -1,4 +1,4 @@
-streamlit
-PyPDF2
-lemma-sdk
-pandas
+streamlit>=1.35.0
+lemma-sdk>=0.5.4
+PyPDF2>=3.0.0
+pandas>=1.5.0
