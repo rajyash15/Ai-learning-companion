@@ -38,6 +38,11 @@ The underlying architecture is fully prepared to expand directly across the broa
 *   **Lemma Connectors:** To allow students to seamlessly sync their personal Google Drives or coaching portal repositories.
 *   **Lemma Schedules:** To auto-compile and email a cumulative Weakness Analytics report to students every Sunday evening.
 *   **Lemma Workflows:** To orchestrate background, bulk asynchronous card generation for massive textbook volumes while the user is offline.
+  
+* **Universal Exam Expansion:** Scaling the platform's core engine to support all competitive, standardized, and academic exam preparations, transitioning from a      NEET-specific tool to a comprehensive learning companion.
+* **Lemma Connectors:** To allow students to seamlessly sync their personal Google Drives or coaching portal repositories.
+* **Lemma Schedules:** To auto-compile and email a cumulative Weakness Analytics report to students every Sunday evening.
+* **Lemma Workflows:** To orchestrate background, bulk asynchronous card generation for massive textbook volumes while the user is offline.
 
 ---
 
