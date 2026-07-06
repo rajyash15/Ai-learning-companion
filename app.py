@@ -618,38 +618,49 @@ def _key(raw: str) -> str:
     return f"{_uid}__{raw}"
 
 
+def _try_refresh_token():
+    rtoken = os.getenv("LEMMA_REFRESH_TOKEN") or st.secrets.get("LEMMA_REFRESH_TOKEN", "")
+    if not rtoken:
+        return None
+    try:
+        session = refresh_cli_session(
+            base_url=os.getenv("LEMMA_BASE_URL", "https://api.lemma.work"),
+            refresh_token=rtoken,
+            verify_ssl=True,
+            timeout=15.0,
+        )
+        token = session.get("access_token") or session.get("token", "")
+        pid = (
+            os.getenv("LEMMA_POD_ID")
+            or st.secrets.get("LEMMA_POD_ID", "")
+            or session.get("pod_id")
+            or session.get("defaults", {}).get("pod_id")
+        )
+        oid = (
+            os.getenv("LEMMA_ORG_ID")
+            or st.secrets.get("LEMMA_ORG_ID", "")
+            or session.get("org_id")
+            or session.get("defaults", {}).get("org_id")
+        )
+        return Pod(pod_id=pid, org_id=oid, token=token, base_url=session.get("base_url", "https://api.lemma.work"))
+    except Exception:
+        return None
+
+
+def _try_direct_token():
+    token = os.getenv("LEMMA_TOKEN") or st.secrets.get("LEMMA_TOKEN", "")
+    pid = os.getenv("LEMMA_POD_ID") or st.secrets.get("LEMMA_POD_ID", "")
+    if token and pid:
+        return Pod(pod_id=pid, token=token)
+    return None
+
+
 def init_lemma():
     if _key("pod") not in st.session_state:
-        refresh_token = os.getenv("LEMMA_REFRESH_TOKEN")
-        if refresh_token:
-            try:
-                session = refresh_cli_session(
-                    base_url=os.getenv("LEMMA_BASE_URL", "https://api.lemma.work"),
-                    refresh_token=refresh_token,
-                    verify_ssl=True,
-                    timeout=15.0,
-                )
-                fresh_token = session.get("access_token") or session.get("token", "")
-                pod_id = (
-                    os.getenv("LEMMA_POD_ID")
-                    or session.get("pod_id")
-                    or session.get("defaults", {}).get("pod_id")
-                )
-                org_id = (
-                    os.getenv("LEMMA_ORG_ID")
-                    or session.get("org_id")
-                    or session.get("defaults", {}).get("org_id")
-                )
-                pod = Pod(
-                    pod_id=pod_id,
-                    org_id=org_id,
-                    token=fresh_token,
-                    base_url=session.get("base_url", "https://api.lemma.work"),
-                )
-            except Exception:
-                pod = Pod.from_env()
-        else:
-            pod = Pod.from_env()
+        pod = _try_refresh_token() or _try_direct_token() or None
+        if pod is None:
+            st.error("Lemma connection failed. Ensure LEMMA_TOKEN (or LEMMA_REFRESH_TOKEN) is set in secrets.")
+            st.stop()
         st.session_state[_key("pod")] = pod
         st.session_state[_key("lemma_docs")] = {}
     return st.session_state[_key("pod")]
