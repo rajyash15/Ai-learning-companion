@@ -844,10 +844,13 @@ def generate_revision_plan(weak_topics_list):
 
 def log_to_lemma_datastore(topic, score, doc_id=""):
     pod = st.session_state[_key("pod")]
-    pod.records.create("weakness_tracker", {
-        "topic": topic, "score": score,
-        "doc_id": doc_id
-    })
+    try:
+        pod.records.create("weakness_tracker", {
+            "topic": topic, "score": score,
+            "doc_id": doc_id
+        })
+    except Exception:
+        pass
     analytics = st.session_state.get(_key("session_analytics"), [])
     analytics.append({"topic": topic, "score": score, "doc_id": doc_id})
     st.session_state[_key("session_analytics")] = analytics
