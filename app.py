@@ -6,7 +6,6 @@ import PyPDF2
 import streamlit as st
 from pathlib import Path
 from lemma_sdk import Pod
-from lemma_sdk.auth import refresh_cli_session
 
 st.set_page_config(page_title="NEET AI Learning Companion", layout="wide")
 
@@ -581,6 +580,9 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
+if st.session_state.get(_key("token_stale")):
+    st.sidebar.warning("Token expired. Run `lemma auth print-token` locally and update LEMMA_TOKEN in secrets.", icon="\u26a0\ufe0f")
+
 st.sidebar.markdown(
     '<div class="sidebar-nav-header">NAVIGATION</div>',
     unsafe_allow_html=True,
@@ -618,50 +620,14 @@ def _key(raw: str) -> str:
     return f"{_uid}__{raw}"
 
 
-def _try_refresh_token():
-    rtoken = os.getenv("LEMMA_REFRESH_TOKEN") or st.secrets.get("LEMMA_REFRESH_TOKEN", "")
-    if not rtoken:
-        return None
-    try:
-        session = refresh_cli_session(
-            base_url=os.getenv("LEMMA_BASE_URL", "https://api.lemma.work"),
-            refresh_token=rtoken,
-            verify_ssl=True,
-            timeout=15.0,
-        )
-        token = session.get("access_token") or session.get("token", "")
-        pid = (
-            os.getenv("LEMMA_POD_ID")
-            or st.secrets.get("LEMMA_POD_ID", "")
-            or session.get("pod_id")
-            or session.get("defaults", {}).get("pod_id")
-        )
-        oid = (
-            os.getenv("LEMMA_ORG_ID")
-            or st.secrets.get("LEMMA_ORG_ID", "")
-            or session.get("org_id")
-            or session.get("defaults", {}).get("org_id")
-        )
-        return Pod(pod_id=pid, org_id=oid, token=token, base_url=session.get("base_url", "https://api.lemma.work"))
-    except Exception:
-        return None
-
-
-def _try_direct_token():
-    token = os.getenv("LEMMA_TOKEN") or st.secrets.get("LEMMA_TOKEN", "")
-    pid = os.getenv("LEMMA_POD_ID") or st.secrets.get("LEMMA_POD_ID", "")
-    if token and pid:
-        return Pod(pod_id=pid, token=token)
-    return None
-
-
 def init_lemma():
     if _key("pod") not in st.session_state:
-        pod = _try_refresh_token() or _try_direct_token() or None
-        if pod is None:
-            st.error("Lemma connection failed. Ensure LEMMA_TOKEN (or LEMMA_REFRESH_TOKEN) is set in secrets.")
+        token = os.getenv("LEMMA_TOKEN") or st.secrets.get("LEMMA_TOKEN", "")
+        pid = os.getenv("LEMMA_POD_ID") or st.secrets.get("LEMMA_POD_ID", "")
+        if not token or not pid:
+            st.error("Set LEMMA_TOKEN and LEMMA_POD_ID in Streamlit secrets.")
             st.stop()
-        st.session_state[_key("pod")] = pod
+        st.session_state[_key("pod")] = Pod(pod_id=pid, token=token)
         st.session_state[_key("lemma_docs")] = {}
     return st.session_state[_key("pod")]
 
@@ -891,7 +857,7 @@ def log_to_lemma_datastore(topic, score, doc_id=""):
             "doc_id": doc_id
         })
     except Exception:
-        pass
+        st.session_state[_key("token_stale")] = True
     analytics = st.session_state.get(_key("session_analytics"), [])
     analytics.append({"topic": topic, "score": score, "doc_id": doc_id})
     st.session_state[_key("session_analytics")] = analytics
@@ -924,7 +890,7 @@ _defaults = {
     "last_doc_id": None,
     "flashcards": list, "current_flashcard": int,
     "show_answer": bool, "revision_plan": None,
-    "session_analytics": list,
+    "session_analytics": list, "token_stale": bool,
 }
 for var, typ in _defaults.items():
     key = _key(var)
