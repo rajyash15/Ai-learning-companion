@@ -6,6 +6,7 @@ import PyPDF2
 import streamlit as st
 from pathlib import Path
 from lemma_sdk import Pod
+from lemma_sdk.auth import refresh_cli_session
 
 st.set_page_config(page_title="NEET AI Learning Companion", layout="wide")
 
@@ -619,7 +620,36 @@ def _key(raw: str) -> str:
 
 def init_lemma():
     if _key("pod") not in st.session_state:
-        pod = Pod.from_env()
+        refresh_token = os.getenv("LEMMA_REFRESH_TOKEN")
+        if refresh_token:
+            try:
+                session = refresh_cli_session(
+                    base_url=os.getenv("LEMMA_BASE_URL", "https://api.lemma.work"),
+                    refresh_token=refresh_token,
+                    verify_ssl=True,
+                    timeout=15.0,
+                )
+                fresh_token = session.get("access_token") or session.get("token", "")
+                pod_id = (
+                    os.getenv("LEMMA_POD_ID")
+                    or session.get("pod_id")
+                    or session.get("defaults", {}).get("pod_id")
+                )
+                org_id = (
+                    os.getenv("LEMMA_ORG_ID")
+                    or session.get("org_id")
+                    or session.get("defaults", {}).get("org_id")
+                )
+                pod = Pod(
+                    pod_id=pod_id,
+                    org_id=org_id,
+                    token=fresh_token,
+                    base_url=session.get("base_url", "https://api.lemma.work"),
+                )
+            except Exception:
+                pod = Pod.from_env()
+        else:
+            pod = Pod.from_env()
         st.session_state[_key("pod")] = pod
         st.session_state[_key("lemma_docs")] = {}
     return st.session_state[_key("pod")]
